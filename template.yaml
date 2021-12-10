@@ -40,7 +40,7 @@ Resources:
                   description: bad input parameter
               x-amazon-apigateway-integration:
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AddLambdaFunction.Arn}/invocations
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${HelloLambdaFunction.Arn}/invocations
                 responses:
                   default:
                     statusCode: "200"
@@ -48,6 +48,16 @@ Resources:
                 httpMethod: POST
                 contentHandling: CONVERT_TO_TEXT
                 type: aws_proxy
+
+  HelloLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.8
+      CodeUri: ./lambda_function
+      Description: Hello
+      AutoPublishAlias: live
+      Role: !GetAtt HelloRole.Arn
 
   AddLambdaFunction:
     Type: AWS::Serverless::Function
@@ -134,3 +144,17 @@ Resources:
             Action:
               - lambda:InvokeFunction
             Resource: '*'
+
+  HelloRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub iam-lambda-role-${AWS::StackName}
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
