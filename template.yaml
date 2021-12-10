@@ -29,7 +29,7 @@ Resources:
           version: 1.0.0
         paths:
           /hello/world:
-            get:
+            post:
               summary: get hello world
               description: |
                 Invokes hello world lambda function example.
@@ -40,7 +40,7 @@ Resources:
                   description: bad input parameter
               x-amazon-apigateway-integration:
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${HelloLambdaFunction.Arn}/invocations
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AddLambdaFunction.Arn}/invocations
                 responses:
                   default:
                     statusCode: "200"
@@ -48,16 +48,6 @@ Resources:
                 httpMethod: POST
                 contentHandling: CONVERT_TO_TEXT
                 type: aws_proxy
-
-  HelloLambdaFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: lambda_function.lambda_handler
-      Runtime: python3.8
-      CodeUri: ./lambda_function
-      Description: Hello
-      AutoPublishAlias: live
-      Role: !GetAtt HelloRole.Arn
 
   AddLambdaFunction:
     Type: AWS::Serverless::Function
@@ -104,57 +94,12 @@ Resources:
       Description: Subtract
       AutoPublishAlias: live
 
-  StateMachine:
-    Type: AWS::Serverless::StateMachine
+  ConfigLambdaPermission:
+    Type: "AWS::Lambda::Permission"
+    DependsOn:
+    - Api
+    - AddLambdaFunction
     Properties:
-      Name: !Sub statemachine-${AWS::StackName}
-      DefinitionUri: sm_def.yaml
-      DefinitionSubstitutions: 
-        AddLambdaFunction: !Ref AddLambdaFunction
-        CleanInputLambdaFunction: !Ref CleanInputLambdaFunction
-        DivideLambdaFunction: !Ref DivideLambdaFunction
-        MultiplyLambdaFunction: !Ref MultiplyLambdaFunction
-        SubtractLambdaFunction: !Ref SubtractLambdaFunction
-      Role: !GetAtt StateMachineRole.Arn
-
-  StateMachineRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: !Sub statemachine-role-${AWS::StackName}
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: states.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-
-  InvokeFunctionPolicy:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: !Sub statemachine-invoke-function-policy-${AWS::StackName}
-      Roles:
-        - !Ref StateMachineRole
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Action:
-              - lambda:InvokeFunction
-            Resource: '*'
-
-  HelloRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: !Sub iam-lambda-role-${AWS::StackName}
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AddLambdaFunction
+      Principal: apigateway.amazonaws.com
