@@ -1,7 +1,6 @@
 name: SAM Validate, Build, Test, Deploy
 on:
   push:
-    #branches: [ main ]
 
 jobs:
   sam-validate-build-test-deploy:
