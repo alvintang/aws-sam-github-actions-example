@@ -38,7 +38,7 @@ jobs:
           # Set variables
           BRANCH=${REF#refs/heads/}
           REPOSITORY=`echo $REPO | tr "/" "-"`
-          ENVIRONMENT=$BRANCH-aws-sam-test
+          ENVIRONMENT=$BRANCH-aws-sam-test-${{ secrets.AWS_REGION_SECONDARY }}
           # In this step we are setting variables and persistenting them
           # into the environment so that they can be utilized in other steps
           echo "::set-output name=branch::$BRANCH"
