@@ -6,10 +6,12 @@ def lambda_handler(event, context):
    second = event['second']
    
    result = int(first) + int(second)
+   
    print(f"RESULT: {result}")
    
    response = {
-       "result": int(result)
+       "result": int(result),
+       "arn": context.invoked_function_arn
    }
    
    return response
