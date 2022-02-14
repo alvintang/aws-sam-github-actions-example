@@ -2,6 +2,7 @@ name: SAM Validate, Build, Test
 on:
   pull_request:
     branches: [ main ]
+  push:
 
 jobs:
   sam-validate-build-test:
@@ -24,7 +25,7 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           # aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ secrets.AWS_REGION_SECONDARY }}
       - name: SAM Validate
         run: |
           sam validate
@@ -55,3 +56,16 @@ jobs:
       - name: Run unit tests
         run: |
           python3 -m pytest -s -vvv ./tests/unit/
+      - name: SAM Deploy
+        run: |
+          # Create S3 Bucket to store code
+          aws s3api head-bucket --bucket "${{ steps.vars.outputs.environment }}" 2>/dev/null \
+            || aws s3 mb s3://${{ steps.vars.outputs.environment }}
+          # Run SAM Deploy
+          sam deploy --template-file .aws-sam/build/template.yaml \
+            --stack-name ${{ steps.vars.outputs.environment }} \
+            --s3-bucket ${{ steps.vars.outputs.environment }} \
+            --parameter-overrides \
+              'ParameterKey=Name,ParameterValue=example \
+              ParameterKey=Version,ParameterValue=${{ steps.vars.outputs.version }}' \
+            --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
